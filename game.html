@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>팩맨 벽돌깨기</title>
+    <style>
+        body {
+            height: 100%;
+            /* 배경 색상 설정 */
+            background: #f3f1e9;
+        }
+
+        * {
+            padding: 0;
+            margin: 0;
+        }
+
+        canvas {
+            /* 캔버스 배경 사진 설정 */
+            background-image: url('bg.png');
+            display: block;
+            margin: 0 auto;
+        }
+
+    </style>
+</head>
+
+<body>
+    <!-- 캔버스 크기 설정 -->
+    <canvas id="myCanvas" width="480" height="360">
+    </canvas>
+
+    <script>
+        var canvas = document.getElementById("myCanvas");
+        var ctx = canvas.getContext("2d");
+        var ballRadius = 15; // 공 크기 설정
+        var x = canvas.width / 2;
+        var y = canvas.height - 30;
+        var dx = 3; // x값의 변화량
+        var dy = -3; // y값의 변화량
+        var paddleHeight = 10; // 페달 길이 설정
+        var paddleWidth = 100; // 페달 가로 길이 설정
+        var paddleX = (canvas.width - paddleWidth) / 2;
+        var rightPressed = false;
+        var leftPressed = false;
+        var brickRowCount = 5; // 벽돌 가로 개수
+        var brickColumnCount = 4; // 벽돌 세로 개수
+        var brickWidth = 75; // 벽돌 가로 길이 설정
+        var brickHeight = 20; // 벽돌 세로 길이 설정
+        var brickPadding = 15; // 벽돌 간 간격 설정
+        var brickOffsetTop = 50; // 벽돌 세로 여백 설정
+        var brickOffsetLeft = 20; // 벽돌 가로 여백 설정
+        var score = 0; // 점수 설정
+        var lives = 3; // 목숨 설정
+        var bricks = [];
+        var stage = 1; // 스테이지 변수 설정
+        var finish = 0; // 게임 종료 변수 설정
+        var clearscore = brickRowCount * brickColumnCount * 10; // 스테이지 클리어 조건 점수
+        var audio = new Audio('collision.wav'); // 오디오 변수 추가
+        audio.volume = 0.2; // 음악 볼륨 20%
+
+        for (var c = 0; c < brickColumnCount; c++) {
+            bricks[c] = [];
+            for (var r = 0; r < brickRowCount; r++) {
+                bricks[c][r] = {
+                    x: 0,
+                    y: 0,
+                    status: 1
+                };
+            }
+        }
+
+        document.addEventListener("keydown", keyDownHandler, false);
+        document.addEventListener("keyup", keyUpHandler, false);
+        document.addEventListener("mousemove", mouseMoveHandler, false);
+
+        // 키보드 오른쪽 키, 왼쪽 키 입력 시 작동
+        function keyDownHandler(e) {
+            if (e.keyCode == 39) {
+                rightPressed = true;
+            } else if (e.keyCode == 37) {
+                leftPressed = true;
+            }
+        }
+
+        // 키보드 오른쪽 키, 왼쪽 키 미입력 시 작동 X
+        function keyUpHandler(e) {
+            if (e.keyCode == 39) {
+                rightPressed = false;
+            } else if (e.keyCode == 37) {
+                leftPressed = false;
+            }
+        }
+
+        // 마우스 움직임 입력
+        function mouseMoveHandler(e) {
+            var relativeX = e.clientX - canvas.offsetLeft;
+            if (relativeX > 0 && relativeX < canvas.width) {
+                paddleX = relativeX - paddleWidth / 2;
+            }
+        }
+
+        // 공이 벽돌을 맞췄을 때 실행
+        function collisionDetection() {
+            for (var c = 0; c < brickColumnCount; c++) {
+                for (var r = 0; r < brickRowCount; r++) {
+                    var b = bricks[c][r];
+                    if (b.status == 1) {
+                        if (x > b.x && x < b.x + brickWidth && y > b.y && y < b.y + brickHeight) {
+                            dy = -dy; // 공의 움직임 변화
+                            b.status = 0; // 벽돌 깨짐
+                            score = score + 10; // 점수 추가
+                            audio.play(); // 음악 재생
+                            if (score == clearscore) {
+                                alert(stage + " 스테이지 클리어 !");
+                                finish = 1; // 게임 종료
+                                reset(); // 스테이지 초기화
+                            }
+                            if (stage > 5) {
+                                alert("게임 승리 !");
+                                location.href = "main.html"; // 메뉴 화면으로 복귀
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 공 출력 함수
+        function drawBall() {
+            ctx.beginPath();
+            ctx.arc(x, y, ballRadius, Math.PI / 7, -Math.PI / 7);
+            ctx.lineTo(x - 5, y);
+            ctx.fillStyle = "#ffee00";
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        // 페달 출력 함수
+        function drawPaddle() {
+            ctx.beginPath();
+            roundedRect(ctx, paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight, 5);
+            ctx.fillStyle = "#c0abab";
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        // 벽돌 출력 함수
+        function drawBricks() {
+            for (var c = 0; c < brickColumnCount; c++) {
+                for (var r = 0; r < brickRowCount; r++) {
+                    if (bricks[c][r].status == 1) {
+                        var brickX = (r * (brickWidth + brickPadding)) + brickOffsetLeft;
+                        var brickY = (c * (brickHeight + brickPadding)) + brickOffsetTop;
+                        bricks[c][r].x = brickX;
+                        bricks[c][r].y = brickY;
+                        ctx.beginPath();
+                        roundedRect(ctx, brickX, brickY, brickWidth, brickHeight, 10);
+
+                        // 세로 줄에 따라 벽돌 색깔을 다르게 지정
+                        if (c == 0)
+                            ctx.fillStyle = "#ff1a00";
+                        else if (c == 1)
+                            ctx.fillStyle = "#ffbef9";
+                        else if (c == 2)
+                            ctx.fillStyle = "#fcb64c";
+                        else if (c == 3)
+                            ctx.fillStyle = "#3ccec9";
+                        ctx.fill();
+                        ctx.closePath();
+                    }
+                }
+            }
+        }
+
+        // 모서리가 둥근 직사각형 함수 생성
+        function roundedRect(ctx, x, y, width, height, radius) {
+            ctx.beginPath();
+            ctx.moveTo(x, y + radius);
+            ctx.lineTo(x, y + height - radius);
+            ctx.arcTo(x, y + height, x + radius, y + height, radius);
+            ctx.lineTo(x + width - radius, y + height);
+            ctx.arcTo(x + width, y + height, x + width, y + height - radius, radius);
+            ctx.lineTo(x + width, y + radius);
+            ctx.arcTo(x + width, y, x + width - radius, y, radius);
+            ctx.lineTo(x + radius, y);
+            ctx.arcTo(x, y, x, y + radius, radius);
+            ctx.stroke();
+        }
+
+        // 점수 출력 함수
+        function drawScore() {
+            ctx.font = "18px San Serif";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("점수 : " + score, 380, 20);
+        }
+
+        // 스테이지 출력 함수
+        function drawStage() {
+            ctx.font = "18px San Serif";
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(stage + " 스테이지", 20, 20);
+        }
+
+        // 목숨 출력 함수
+        function drawLives() {
+
+            // 검은색 직사각형을 출력하여 목숨 표시를 지움
+            if (lives < 3) {
+                ctx.beginPath();
+                ctx.rect(60, 320, 25, 25);
+                ctx.fillStyle = "#000000";
+                ctx.fill();
+                ctx.closePath();
+
+                // 검은색 직사각형을 출력하여 목숨 표시를 지움
+                if (lives < 2) {
+                    ctx.beginPath();
+                    ctx.rect(30, 320, 25, 25);
+                    ctx.fillStyle = "#000000";
+                    ctx.fill();
+                    ctx.closePath();
+                }
+            }
+        }
+
+        // 스테이지 초기화 함수
+        function reset() {
+
+            // 게임 종료 변수가 1일 때 실행
+            if (finish == 1) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height); // 캔버스 초기화
+
+                // 각종 변수 값 초기화
+                x = canvas.width / 2;
+                y = canvas.height - 30;
+                dx = 3;
+                dy = -3;
+
+                // 벽돌 상태 초기화
+                for (var c = 0; c < brickColumnCount; c++) {
+                    for (var r = 0; r < brickRowCount; r++) {
+                        bricks[c][r].status = 1;
+                    }
+                }
+                stage++; // 스테이지 증가
+                clearscore += 200; // 스테이지 클리어 조건 점수 증가
+                paddleWidth -= 10; // 페달 가로 길이 감소 (난이도 증가)
+            }
+        }
+
+        // 캔버스 출력 함수
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBricks();
+            drawBall();
+            drawPaddle();
+            drawStage();
+            drawScore();
+            drawLives();
+            collisionDetection();
+            if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
+                dx = -dx;
+            }
+            if (y + dy < ballRadius) {
+                dy = -dy;
+            } else if (y + dy > canvas.height - ballRadius) {
+                if (x > paddleX && x < paddleX + paddleWidth) {
+                    dx = -((paddleX + (paddleWidth / 2) - x) / (paddleWidth)) * 10;
+                    dy = -dy;
+                }
+
+                // 목숨 차감
+                else {
+                    lives--;
+
+                    // 목숨이 0일 시 게임 종료
+                    if (!lives) {
+                        alert("게임 오버 !");
+                        location.href = "main.html"; // 메뉴 화면으로 복귀
+                    }
+
+                    // 각종 변수 초기화
+                    else {
+                        x = canvas.width / 2;
+                        y = canvas.height - 30;
+                        dx = 3;
+                        dy = -3;
+                        paddleX = (canvas.width - paddleWidth) / 2;
+                    }
+                }
+            }
+            
+            // 키보드 화살표키 입력 시 페달 위치 설정
+            if (rightPressed && paddleX < canvas.width - paddleWidth) {
+                paddleX += 5;
+            } else if (leftPressed && paddleX > 0) {
+                paddleX -= 5;
+            }
+            x += dx;
+            y += dy;
+            requestAnimationFrame(draw);
+        }
+        draw(); // 캔버스 출력 함수 선언
+
+    </script>
+</body>
+
+</html>

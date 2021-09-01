@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>팩맨 벽돌깨기</title>
+    <style>
+        * {
+            text-align: center;
+            padding: 0;
+            margin: 0 auto;
+        }
+
+        /* 게임 시작 버튼 설정 */
+        button {
+            width: 100px;
+            height: 50px;
+            cursor: hand;
+            position: absolute;
+            top: 250px;
+            left: 460px;
+            z-index: auto;
+        }
+
+        body {
+            height: 100%;
+            background-color: #F3F1E9; /* 배경 색상 설정 */
+        }
+
+    </style>
+
+    <script>
+        var audio = new Audio('bgm.wav'); // 오디오 변수 선언
+
+    </script>
+
+</head>
+
+<body>
+    <!-- 메뉴창 위에 마우스를 올리면 음악 재생 -->
+    <img src="menu.png" alt="Menu" onmouseover="audio.play();">
+
+    <!-- 게임 시작 버튼 -->
+    <button name="start" type="button" onclick="location.href='game.html'"><img src="button.png"></button>
+</body>
+
+</html>
