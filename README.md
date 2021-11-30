@@ -13,5 +13,5 @@ using *Web Browser*
 main.html
 ```
 
-## Unsolved
-- `동적 해상도 요소 배치`
+## Tasks
+- [ ] 동적 해상도 요소 배치
