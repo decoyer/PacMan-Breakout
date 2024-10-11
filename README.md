@@ -9,6 +9,7 @@ using *Web Browser*
 - **물리엔진**을 적용하여 공을 맞추는 각도에 따라 방향, 속도 등이 달라짐
 
 ## Getting Started
+![HTML5](https://img.shields.io/badge/html5-%23E34F26.svg?style=for-the-badge&logo=html5&logoColor=white)
 ```
 main.html
 ```
